@@ -16,6 +16,8 @@ This class defines an interface to the cling C++ interpreter.
 Cling is a full ANSI compliant C++-11 interpreter based on
 clang/LLVM technology.
 */
+//for printing
+#include <iostream>
 
 #include "TCling.h"
 
@@ -1171,15 +1173,29 @@ TCling::TCling(const char *name, const char *title)
       clingArgsStorage.push_back("-Wno-undefined-inline");
       clingArgsStorage.push_back("-fsigned-char");
    }
+   
+   //Add clang args
+   for (auto arg : { "-load", "clad.so"}) {
+      clingArgsStorage.push_back("-Xclang");
+      clingArgsStorage.push_back(arg);
+   }
+
+   //Print contents of clingArgsStorage
+   std::cout << "clingArgsStorage:" << '\n';
+   for (const auto & arg : clingArgsStorage)
+      std::cout << '\t' << arg << '\n';
 
    // Process externally passed arguments if present.
    llvm::Optional<std::string> EnvOpt = llvm::sys::Process::GetEnv("EXTRA_CLING_ARGS");
+   //Print contents of EXTRA_CLING_ARGS variable
+   std::cout << "EXTRA_CLING_ARGS:" << '\n';
    if (EnvOpt.hasValue()) {
       StringRef Env(*EnvOpt);
       while (!Env.empty()) {
          StringRef Arg;
          std::tie(Arg, Env) = Env.split(' ');
          clingArgsStorage.push_back(Arg.str());
+         std::cout << '\t' << Arg.str() << '\n';
       }
    }
 
