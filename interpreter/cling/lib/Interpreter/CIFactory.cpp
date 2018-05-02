@@ -781,13 +781,11 @@ static void stringifyPreprocSetting(PreprocessorOptions& PPOpts,
     // Copied from Frontend/FrontendAction.cpp.
     // FIXME: Remove when we switch to the new cling driver.
     for (const std::string& Path : CI.getFrontendOpts().Plugins) {
-	   cling::log () << Path << '\n';
        std::string Error;
        if (llvm::sys::DynamicLibrary::LoadLibraryPermanently(Path.c_str(),
                                                              &Error))
           CI.getDiagnostics().Report(clang::diag::err_fe_unable_to_load_plugin)
              << Path << Error;
-
     }
 
     // If there are no registered plugins we don't need to wrap the consumer
@@ -831,14 +829,6 @@ static void stringifyPreprocSetting(PreprocessorOptions& PPOpts,
     const char* const* argv = &COpts.Remaining[0];
     std::vector<const char*> argvCompile(argv, argv+1);
     argvCompile.reserve(argc+5);
-
-	   
-	//Add clang args to enable clad plugin
-	auto path_to_clad = LLVMDir + std::string {"/plugins/lib/clad.so"};	
-	for (auto arg : { "-load", path_to_clad.c_str() }) {
-		argvCompile.push_back("-Xclang");
-		argvCompile.push_back(arg);
-	}
 
     // Variables for storing the memory of the C-string arguments.
     // FIXME: We shouldn't use C-strings in the first place, but just use
@@ -935,7 +925,6 @@ static void stringifyPreprocSetting(PreprocessorOptions& PPOpts,
     }
 #endif
 
-
     if (!COpts.HasOutput || !HasInput) {
       argvCompile.push_back("-c");
       argvCompile.push_back("-");
@@ -975,6 +964,9 @@ static void stringifyPreprocSetting(PreprocessorOptions& PPOpts,
       return nullptr;
     }
 
+    cling::log() << "Data:" << '\n';
+    for (int i = 0; i < CC1Args->size (); i++)
+        cling::log() << '\t' << CC1Args->data()[i] << '\n';
     clang::CompilerInvocation::CreateFromArgs(*InvocationPtr, CC1Args->data() + 1,
                                               CC1Args->data() + CC1Args->size(),
                                               *Diags);
@@ -985,7 +977,6 @@ static void stringifyPreprocSetting(PreprocessorOptions& PPOpts,
 
     // Create and setup a compiler instance.
     std::unique_ptr<CompilerInstance> CI(new CompilerInstance());
-
     CI->setInvocation(InvocationPtr);
     CI->setDiagnostics(Diags.get()); // Diags is ref-counted
     if (!OnlyLex)
@@ -1266,7 +1257,6 @@ static void stringifyPreprocSetting(PreprocessorOptions& PPOpts,
     return CI.release(); // Passes over the ownership to the caller.
   }
 	
-
 } // unnamed namespace
 
 namespace cling {
