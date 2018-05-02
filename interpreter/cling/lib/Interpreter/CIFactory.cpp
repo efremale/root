@@ -964,9 +964,12 @@ static void stringifyPreprocSetting(PreprocessorOptions& PPOpts,
       return nullptr;
     }
 
-    cling::log() << "Data:" << '\n';
+    /*
+    // Print all flags for clang invocation
+    cling::log() << "Flags:" << '\n';
     for (int i = 0; i < CC1Args->size (); i++)
         cling::log() << '\t' << CC1Args->data()[i] << '\n';
+    */
     clang::CompilerInvocation::CreateFromArgs(*InvocationPtr, CC1Args->data() + 1,
                                               CC1Args->data() + CC1Args->size(),
                                               *Diags);
