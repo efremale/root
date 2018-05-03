@@ -18,6 +18,9 @@
 #include "clang/AST/DeclGroup.h"
 #include "clang/Serialization/ASTDeserializationListener.h"
 
+#include "clang/AST/DeclBase.h"
+#include "llvm/Support/raw_ostream.h"
+
 using namespace clang;
 
 namespace clang {
@@ -280,8 +283,16 @@ void MultiplexConsumer::Initialize(ASTContext &Context) {
 
 bool MultiplexConsumer::HandleTopLevelDecl(DeclGroupRef D) {
   bool Continue = true;
+  llvm::outs () << ">in MultiplexConsumer::HandleTopLevelDecl" << '\n';
+  llvm::outs () << ">calling HandleTopLevelDecl on" << '\n';
+  for (auto it = D.begin (); it != D.end (); ++it) {
+    (*it)->print (llvm::outs ());
+    llvm::outs () << '\n' << '\n';
+  }
+  
   for (auto &Consumer : Consumers)
     Continue = Continue && Consumer->HandleTopLevelDecl(D);
+
   return Continue;
 }
 

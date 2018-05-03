@@ -25,6 +25,9 @@
 #include <cstdio>
 #include <memory>
 
+#include "clang/AST/DeclBase.h"
+#include "llvm/Support/raw_ostream.h"
+
 using namespace clang;
 
 namespace {
@@ -144,7 +147,15 @@ void clang::ParseAST(Sema &S, bool PrintStats, bool SkipFunctionBodies) {
     External->StartTranslationUnit(Consumer);
 
   for (bool AtEOF = P.ParseFirstTopLevelDecl(ADecl); !AtEOF;
-       AtEOF = P.ParseTopLevelDecl(ADecl)) {
+    AtEOF = P.ParseTopLevelDecl(ADecl)) {
+
+    llvm::outs () << ">in clang::ParserAST" << '\n';
+    llvm::outs () << ">calling HandleTopLevelDecl on" << '\n';
+    for (auto it = ADecl.get().begin (); it != ADecl.get().end (); ++it) {
+        (*it)->print (llvm::outs ());
+        llvm::outs () << '\n' << '\n';
+    }
+    
     // If we got a null return and something *was* parsed, ignore it.  This
     // is due to a top-level semicolon, an action override, or a parse error
     // skipping something.
