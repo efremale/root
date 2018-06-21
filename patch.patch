@@ -1,0 +1,13 @@
+index 71afe5b052..4513bff56f 100644
+--- a/core/metacling/src/TCling.cxx
++++ b/core/metacling/src/TCling.cxx
+@@ -1219,6 +1219,9 @@ TCling::TCling(const char *name, const char *title)
+ #else
+    TString llvmResourceDir = TROOT::GetEtcDir() + "/cling";
+ #endif
++   if (!fromRootCling)
++      interpArgs.push_back("-fplugin=" + llvmResourceDir + "/plugins/lib/clad.so");
++
+    // Add statically injected extra arguments, usually coming from rootcling.
+    for (const char** extraArgs = TROOT::GetExtraInterpreterArgs();
+         extraArgs && *extraArgs; ++extraArgs) {
