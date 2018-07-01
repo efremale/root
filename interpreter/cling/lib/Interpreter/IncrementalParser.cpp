@@ -176,6 +176,43 @@ namespace {
   };
 } // unnamed namespace
 
+static clang::MultiplexConsumer* HandlePlugins(CompilerInstance& CI) {
+  llvm::outs() << "HANDLE PLUGINS" << '\n';
+  std::vector<std::unique_ptr<ASTConsumer>> Consumers {};
+  // Copied from Frontend/FrontendAction.cpp.
+  // FIXME: Remove when we switch to the new cling driver.
+  for (const std::string& Path : CI.getFrontendOpts().Plugins) {
+    std::string Error;
+    llvm::outs() << "LOADING PLUGIN: " << Path << '\n';
+    if (llvm::sys::DynamicLibrary::LoadLibraryPermanently(Path.c_str(), &Error))
+      CI.getDiagnostics().Report(clang::diag::err_fe_unable_to_load_plugin)
+        << Path << Error;
+  }
+
+  // If there are no registered plugins we don't need to wrap the consumer
+  if (FrontendPluginRegistry::begin() != FrontendPluginRegistry::end())
+    for (auto it = clang::FrontendPluginRegistry::begin(),
+              ie = clang::FrontendPluginRegistry::end();
+              it != ie; ++it) {
+      std::unique_ptr<clang::PluginASTAction> P(it->instantiate());
+
+      PluginASTAction::ActionType PluginActionType = P->getActionType();
+      assert(PluginActionType != clang::PluginASTAction::ReplaceAction);
+      
+      if (P->ParseArgs(CI, CI.getFrontendOpts().PluginArgs[it->getName()])) {
+        std::unique_ptr<ASTConsumer> PluginConsumer
+          = P->CreateASTConsumer(CI, /*InputFile*/ "");
+        if (PluginActionType == clang::PluginASTAction::AddBeforeMainAction)
+          Consumers.insert(Consumers.begin(), std::move(PluginConsumer));
+        else
+          Consumers.push_back(std::move(PluginConsumer));
+          
+      }
+    }
+
+  return new clang::MultiplexConsumer(std::move(Consumers));
+}
+
 namespace cling {
   IncrementalParser::IncrementalParser(Interpreter* interp, const char* llvmdir)
       : m_Interpreter(interp),
@@ -197,6 +234,8 @@ namespace cling {
       cling::errs() << "No AST consumer available.\n";
       return;
     }
+
+    m_PluginConsumer = std::unique_ptr<clang::MultiplexConsumer>(HandlePlugins(*m_CI));
 
     DiagnosticsEngine& Diag = m_CI->getDiagnostics();
     if (m_CI->getFrontendOpts().ProgramAction != frontend::ParseSyntaxOnly) {
@@ -534,8 +573,10 @@ namespace cling {
   }
 
   void IncrementalParser::emitTransaction(Transaction* T) {
-    for (auto DI = T->decls_begin(), DE = T->decls_end(); DI != DE; ++DI)
+    for (auto DI = T->decls_begin(), DE = T->decls_end(); DI != DE; ++DI) {
       m_Consumer->HandleTopLevelDecl(DI->m_DGR);
+      m_PluginConsumer->HandleTopLevelDecl(DI->m_DGR);
+    }
   }
 
   void IncrementalParser::codeGenTransaction(Transaction* T) {

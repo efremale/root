@@ -1219,6 +1219,19 @@ TCling::TCling(const char *name, const char *title)
 #else
    TString llvmResourceDir = TROOT::GetEtcDir() + "/cling";
 #endif
+   
+   TString cladArg;  
+   if (!fromRootCling) {
+      // Will be transformed to "-load llvmResoureDir/plugins/lib/clad.so"
+      cladArg = "-fplugin=" + llvmResourceDir + "/plugins/lib/clad.so";
+      interpArgs.push_back (cladArg.Data());
+      // Flags for clad plugin, not necessary
+      for (auto && arg : { "-add-plugin", "clad", "-plugin-arg-clad", "-fdump-derived-fn" }) {
+         interpArgs.push_back ("-Xclang");
+         interpArgs.push_back (arg);
+      }
+   }
+
    // Add statically injected extra arguments, usually coming from rootcling.
    for (const char** extraArgs = TROOT::GetExtraInterpreterArgs();
         extraArgs && *extraArgs; ++extraArgs) {

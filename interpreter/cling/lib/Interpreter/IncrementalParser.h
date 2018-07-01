@@ -12,6 +12,13 @@
 
 #include "clang/Basic/SourceLocation.h"
 
+#include "clang/Frontend/FrontendAction.h"
+#include "clang/Frontend/FrontendDiagnostic.h"
+#include "clang/Frontend/FrontendPluginRegistry.h"
+#include "clang/Frontend/MultiplexConsumer.h"
+#include "clang/Frontend/TextDiagnosticPrinter.h"
+#include "clang/Frontend/VerifyDiagnosticConsumer.h"
+
 #include "llvm/ADT/PointerIntPair.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringRef.h"
@@ -27,6 +34,7 @@ namespace llvm {
 }
 
 namespace clang {
+  class ASTConsumer;
   class CodeGenerator;
   class CompilerInstance;
   class DiagnosticConsumer;
@@ -70,6 +78,7 @@ namespace cling {
 
     // CI owns it
     DeclCollector* m_Consumer;
+    std::unique_ptr<clang::MultiplexConsumer> m_PluginConsumer;
 
     ///\brief The storage for our transactions.
     ///
