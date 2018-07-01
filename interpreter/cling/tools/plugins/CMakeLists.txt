@@ -24,6 +24,8 @@
 #  add_subdirectory(${subdir})
 #endforeach()
 
+set(CLADDIFFERENTIATOR_LIB ${CLING_PLUGIN_INSTALL_PREFIX}lib/${CMAKE_STATIC_LIBRARY_PREFIX}cladDifferentiator${CMAKE_STATIC_LIBRARY_SUFFIX})
+
 ExternalProject_Add(
   clad
   GIT_REPOSITORY https://github.com/vgvassilev/clad.git
@@ -37,9 +39,20 @@ ExternalProject_Add(
              -DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}
              -DCMAKE_INSTALL_PREFIX=${CLING_PLUGIN_INSTALL_PREFIX}
              -DCLAD_PATH_TO_LLVM_BUILD=${LLVM_DIR}
+  BUILD_BYPRODUCTS ${CLADDIFFERENTIATOR_LIB}
   #BUILD_BYPRODUCTS ${_gtest_byproducts}
   # Wrap download, configure and build steps in a script to log output
   LOG_DOWNLOAD ON
   LOG_CONFIGURE ON
   LOG_BUILD ON
   )
+
+add_library(cladDifferentiator IMPORTED STATIC GLOBAL)
+add_dependencies(cladDifferentiator clad)
+set_property(TARGET cladDifferentiator PROPERTY IMPORTED_LOCATION ${CLADDIFFERENTIATOR_LIB})
+
+add_library(clingPlugins INTERFACE)
+add_dependencies(clingPlugins clad)
+target_link_libraries(clingPlugins INTERFACE
+  cladDifferentiator
+)
